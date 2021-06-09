@@ -7,6 +7,7 @@ body{ background: #FFFFFF; color: #666;}
 a,h1, h2, h3, h4, h5, h6{ color: #333333;}
 a:hover{ color: #FF9900;}
 .text-red{ color: red;}
+.text-black{ color: #333333;}
 .text-muted{ color: #999999;}
 
 /* form */
