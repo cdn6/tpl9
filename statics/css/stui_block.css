@@ -77,6 +77,8 @@ textarea.form-control{ height: auto;}
 .btn-lg{ padding: 12px 30px;}
 .btn-block{ display: block; text-align: center;}
 .btn.disabled{cursor: not-allowed;}
+.btns_disad{background-color: #F5F5F5!important;color: #999999!important; pointer-events: none;cursor: not-allowed;}
+.btns_icon{!important;color: #999999!important;}
 
 /* tag */
 .tag{ padding-left: 10px;}
