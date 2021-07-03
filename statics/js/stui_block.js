@@ -115,7 +115,7 @@ var stui = {
             })
         },
         'qrcode': function() {
-            $("img.qrcode").attr("src", "//api.maccms.com/qrcode/?w=150&h=150&url=" + encodeURIComponent(stui.browser.url) + "")
+            $("img.qrcode").attr("src", "//qrcode.tlyy.in/api.php?url=" + encodeURIComponent(stui.browser.url) + "")
         }
     },
     'common': {
