@@ -113,8 +113,10 @@ var MAC={
             return res.join(",");
         }
     },
-    'Qrcode':function(){
-        $('.mac_qrcode').attr('src','//api.maccms.la/qrcode/?w=150&h=150&url=' + MAC.Url);
+    'Qrcode':{
+        'Init':function(){
+            $('.mac_qrcode').attr('src', maccms.path +'/index.php/qrcode/index.html?url='+ MAC.Url);
+        }
     },
     'Image':{
         'Lazyload':{
