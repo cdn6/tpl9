@@ -113,10 +113,8 @@ var MAC={
             return res.join(",");
         }
     },
-    'Qrcode':{
-        'Init':function(){
-            $('.mac_qrcode').attr('src', maccms.path +'/index.php/qrcode/index.html?url='+ MAC.Url);
-        }
+    'Qrcode':function(){
+        $('.mac_qrcode').attr('src','//qrcode.tlyy.in/api.php?url=' + MAC.Url);
     },
     'Image':{
         'Lazyload':{
