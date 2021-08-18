@@ -24,7 +24,7 @@ var MAC={
         if (window.clipboardData){ window.clipboardData.setData("Text",s); }
         else{
             if( $("#mac_flash_copy").get(0) ==undefined ){ $('<div id="mac_flash_copy"></div>'); } else {$('#mac_flash_copy').html(''); }
-            $('#mac_flash_copy').html('<embed src='+SitePath+'"images/_clipboard.swf" FlashVars="clipboard='+escape(s)+'" width="0" height="0" type="application/x-shockwave-flash"></embed>');
+            $('#mac_flash_copy').html('<embed src='+maccms.path+'"images/_clipboard.swf" FlashVars="clipboard='+escape(s)+'" width="0" height="0" type="application/x-shockwave-flash"></embed>');
         }
         MAC.Pop.Msg(100,20,'复制成功',1000);
     },
@@ -74,11 +74,11 @@ var MAC={
             history.back();
         }
         else{
-            window.location ="http://"+ldghost;
+            window.location ="//"+ldghost;
         }
     },
     'Adaptive':function(){
-        if(maccms.mob_status=='1'&& maccms.url != maccms.wapurl){
+        if(maccms.mob_status=='1' && maccms.url != maccms.wapurl){
             if(document.domain ==maccms.url && MAC.UserAgent.mobile){
                     location.href = location.href.replace(maccms.url,maccms.wapurl);
             }
@@ -113,8 +113,37 @@ var MAC={
             return res.join(",");
         }
     },
-    'Qrcode':function(){
-        $('.mac_qrcode').attr('src','//qrcode.tlyy.in/api.php?url=' + MAC.Url);
+    'Ajax':function(url,type,dataType,data,sfun,efun,cfun){
+        type=type||'get';
+        dataType=dataType||'json';
+        data=data||'';
+        efun=efun||'';
+        cfun=cfun||'';
+
+        $.ajax({
+            url:url,
+            type:type,
+            dataType:dataType,
+            data:data,
+            timeout: 5000,
+            beforeSend:function(XHR){
+
+            },
+            error:function(XHR,textStatus,errorThrown){
+                if(efun) efun(XHR,textStatus,errorThrown);
+            },
+            success:function(data){
+                sfun(data);
+            },
+            complete:function(XHR, TS){
+                if(cfun) cfun(XHR, TS);
+            }
+        })
+    },
+    'Qrcode':{
+        'Init':function(){
+            $('.mac_qrcode').attr('src', maccms.path +'/index.php/qrcode/index.html?url='+ MAC.Url);
+        }
     },
     'Image':{
         'Lazyload':{
@@ -141,11 +170,11 @@ var MAC={
         },
         'Click': function(){//点击刷新
             $('body').on('click', 'img.mac_verify_img', function(){
-                $(this).attr('src', maccms.path +'/index.php/verify/index.html?');
+                $(this).attr('src', maccms.path +'/index.php/verify/index.html?r='+Math.random());
             });
         },
         'Refresh':function(){
-            $('.mac_verify_img').attr('src', maccms.path +'/index.php/verify/index.html?');
+            $('.mac_verify_img').attr('src', maccms.path +'/index.php/verify/index.html?r='+Math.random());
         },
         'Show':function(){
             return '<img class="mac_verify_img" src="'+ maccms.path +'/index.php/verify/index.html?"  title="看不清楚? 换一张！">';
@@ -156,12 +185,12 @@ var MAC={
             $('.mac_page_go').click(function () {
                 var that =$(this);
                 var url = that.attr('data-url');
-                var total = that.attr('data-total');
+                var total = parseInt(that.attr('data-total'));
                 var sp = that.attr('data-sp');
-                var page= $('#page').val();
+                var page= parseInt($('#page').val());
 
                 if(page>0&&(page<=total)){
-                    url=url.replace(sp + 'PAGELINK',page).replace('PAGELINK',page);
+                    url=url.replace(sp + 'PAGELINK',sp + page).replace('PAGELINK',page);
                     location.href=url;
                 }
                 return false;
@@ -174,23 +203,15 @@ var MAC={
                 return;
             }
             var $that = $(".mac_hits");
-            $.ajax({
-                type: 'get',
-                url: maccms.path + '/index.php/ajax/hits?mid='+$that.attr("data-mid")+'&id='+$that.attr("data-id")+'&type=update',
-                timeout: 5000,
-                dataType: 'json',
-                error: function () {
 
-                },
-                success: function (json) {
-                    if (json.code == 1) {
-                        $(".mac_hits").each(function(i){
-                            $type = $(".mac_hits").eq(i).attr('data-type');
-                            if($type != 'insert'){
-                                $('.'+$type).html(eval('(json.data.' + $type + ')'));
-                            }
-                        });
-                    }
+            MAC.Ajax(maccms.path + '/index.php/ajax/hits?mid='+$that.attr("data-mid")+'&id='+$that.attr("data-id")+'&type=update','get','json','',function(r){
+                if (r.code == 1) {
+                    $(".mac_hits").each(function(i){
+                        $type = $(".mac_hits").eq(i).attr('data-type');
+                        if($type != 'insert'){
+                            $('.'+$type).html(eval('(r.data.' + $type + ')'));
+                        }
+                    });
                 }
             });
 
@@ -205,40 +226,27 @@ var MAC={
                 MAC.Score.Submit();
             });
 
-            $.ajax({
-                type: 'post',
-                url: maccms.path+'/index.php/ajax/score?mid='+ $('.mac_score').attr('data-mid') +'&id=' +$('.mac_score').attr('data-id'),
-                timeout: 5000,
-                error: function(){
-                    $(".mac_score").html('评分加载失败');
-                },
-                success: function($r){
-                    MAC.Score.View($r);
-                }
+            MAC.Ajax(maccms.path+'/index.php/ajax/score?mid='+ $('.mac_score').attr('data-mid') +'&id=' +$('.mac_score').attr('data-id'),'post','json','',function(r){
+                MAC.Score.View(r);
+            },function(){
+                $(".mac_score").html('评分加载失败');
             });
+
         },
         'Submit':function(){
             var $s = $('.mac_score').find("input[name='score']").val();
-            $.ajax({
-                type: 'post',
-                url: maccms.path+'/index.php/ajax/score?mid='+$('.mac_score').attr('data-mid')+'&id='+$('.mac_score').attr('data-id') + '&score='+ $s,
-                timeout: 5000,
-                error: function(){
-
-                },
-                success: function($r){
-                    MAC.Pop.Msg(100,20,$r.msg,1000);
-                    if($r.code==1){
-                        MAC.Score.View($r);
-                    }
+            MAC.Ajax(maccms.path+'/index.php/ajax/score?mid='+$('.mac_score').attr('data-mid')+'&id='+$('.mac_score').attr('data-id') + '&score='+ $s,'get','json','',function(r){
+                MAC.Pop.Msg(100,20,r.msg,1000);
+                if(r.code==1){
+                    MAC.Score.View(r);
                 }
             });
         },
-        'View':function($r){
-            $(".rating"+Math.floor($r.data.score)).attr('checked',true);
-            $(".score_num").text( $r.data.score_num );
-            $(".score_all").text( $r.data.score_all );
-            $(".score_pjf").text( $r.data.score );
+        'View':function(r){
+            $(".rating"+Math.floor(r.data.score)).attr('checked',true);
+            $(".score_num").text(r.data.score_num);
+            $(".score_all").text(r.data.score_all);
+            $(".score_pjf").text(r.data.score);
         }
     },
     'Star': {
@@ -256,22 +264,17 @@ var MAC={
                     return $(this).attr('data-score');
                 },
                 click: function(score, evt) {
-                    $.ajax({
-                        type: 'get',
-                        url: maccms.path+'/index.php/ajax/score?mid='+$('.mac_star').attr('data-mid')+'&id='+$('.mac_star').attr('data-id')+'&score='+(score*2),
-                        timeout: 5000,
-                        dataType:'json',
-                        error: function(){
-                            $('.star_box').attr('title', '网络异常！');
-                        },
-                        success: function(json){
-                            if(json.status == 1){
-                                $('.star_tips').html(json.data.score);
-                            }else{
-                                $('.star_box').attr('title', json.msg);
-                            }
+
+                    MAC.Ajax(maccms.path+'/index.php/ajax/score?mid='+$('.mac_star').attr('data-mid')+'&id='+$('.mac_star').attr('data-id')+'&score='+(score*2),'get','json','',function(r){
+                        if(json.status == 1){
+                            $('.star_tips').html(r.data.score);
+                        }else{
+                            $('.star_box').attr('title', r.msg);
                         }
+                    },function(){
+                        $('.star_box').attr('title', '网络异常！');
                     });
+
                 }
             });
         }
@@ -281,25 +284,22 @@ var MAC={
             $('body').on('click', '.digg_link', function(e){
                 var $that = $(this);
                 if($that.attr("data-id")){
-                    $.ajax({
-                        url: maccms.path + '/index.php/ajax/digg.html?mid='+$that.attr("data-mid")+'&id='+$that.attr("data-id")+'&type='+$that.attr("data-type"),
-                        cache: false,
-                        dataType: 'json',
-                        success: function($r){
-                            $that.addClass('disabled');
-                            if($r.code == 1){
-                                if($that.attr("data-type")=='up'){
-                                    $that.find('.digg_num').html($r.data.up);
-                                }
-                                else{
-                                    $that.find('.digg_num').html($r.data.down);
-                                }
+
+                    MAC.Ajax(maccms.path + '/index.php/ajax/digg.html?mid='+$that.attr("data-mid")+'&id='+$that.attr("data-id")+'&type='+$that.attr("data-type"),'get','json','',function(r){
+                        $that.addClass('disabled');
+                        if(r.code == 1){
+                            if($that.attr("data-type")=='up'){
+                                $that.find('.digg_num').html(r.data.up);
                             }
                             else{
-                                $that.attr('title', $r.msg);
+                                $that.find('.digg_num').html(r.data.down);
                             }
                         }
+                        else{
+                            $that.attr('title', r.msg);
+                        }
                     });
+
                 }
             });
         }
@@ -321,16 +321,10 @@ var MAC={
             });
         },
         'Show':function($page){
-            $.ajax({
-                type: 'post',
-                url: maccms.path+'/index.php/gbook/index?page='+$page,
-                timeout: 3000,
-                error: function(){
-                    $(".mac_gbook_box").html('留言加载失败，请刷新...');
-                },
-                success:function($html){
-                    $(".mac_gbook_box").html($html);
-                }
+            MAC.Ajax(maccms.path+'/index.php/gbook/index?page='+$page,'post','json','',function(r){
+                $(".mac_gbook_box").html(r);
+            },function(){
+                $(".mac_gbook_box").html('留言加载失败，请刷新...');
             });
         },
         'Submit':function(){
@@ -338,25 +332,20 @@ var MAC={
                 MAC.Pop.Msg(100,20,'请输入您的留言!',1000);
                 return false;
             }
-            $.ajax({
-                type: 'post',
-                url: maccms.path + '/index.php/gbook/saveData',
-                data: $('.gbook_form').serialize(),
-                success:function($r){
-                    MAC.Pop.Msg(100,20,$r.msg,1000);
-                    if($r.code == 1){
-                        location.reload();
-                    }
-                    else{
-                        if(MAC.Gbook.Verify==1){
-                            MAC.Verify.Refresh();
-                        }
+            MAC.Ajax(maccms.path + '/index.php/gbook/saveData','post','json',$('.gbook_form').serialize(),function(r){
+                MAC.Pop.Msg(100,20,r.msg,1000);
+                if(r.code == 1){
+                    location.reload();
+                }
+                else{
+                    if(MAC.Gbook.Verify==1){
+                        MAC.Verify.Refresh();
                     }
                 }
             });
         },
-        'Report':function(name){
-            MAC.Pop.Show(400,280,'数据报错',maccms.path+'/index.php/gbook/report?name=' + encodeURIComponent(name),function($r){
+        'Report':function(name,id){
+            MAC.Pop.Show(400,300,'数据报错',maccms.path+'/index.php/gbook/report.html?id='+id+'&name='+ encodeURIComponent(name),function(r){
 
             });
         }
@@ -381,14 +370,14 @@ var MAC={
                     inputClass: "mac_input",
                     resultsClass: "mac_results",
                     loadingClass: "mac_loading",
-                    width: 175, scrollHeight: 300, minChars: 1, matchSubset: 1,
+                    width: 175, scrollHeight: 300, minChars: 1, matchSubset: 0,
                     cacheLength: 10, multiple: false, matchContains: true, autoFill: false,
                     dataType: "json",
-                    parse: function ($r) {
-                        if ($r.code == 1) {
+                    parse: function (r) {
+                        if (r.code == 1) {
                             var parsed = [];
-                            $.each($r['list'], function (index, row) {
-                                row.url = $r.url;
+                            $.each(r['list'], function (index, row) {
+                                row.url = r.url;
                                 parsed[index] = {
                                     data: row
                                 };
@@ -477,6 +466,7 @@ var MAC={
 
             if(jsondata != undefined){
                 this.Json = eval(jsondata);
+
                 for($i=0;$i<this.Json.length;$i++){
                     if(this.Json[$i].link == link){
                         return false;
@@ -484,7 +474,7 @@ var MAC={
                 }
 
                 jsonstr = '{log:[{"name":"'+name+'","link":"'+link+'","pic":"'+pic+'"},';
-                for($i=0; $i<this.Json.length-1; $i++){
+                for($i=0; $i<this.Json.length; $i++){
                     if($i<= this.Limit && this.Json[$i]){
                         jsonstr += '{"name":"'+this.Json[$i].name+'","link":"'+this.Json[$i].link+'","pic":"'+this.Json[$i].pic+'"},';
                     }else{
@@ -504,29 +494,14 @@ var MAC={
             $('.mac_history_box').html('<li class="hx_clear">已清空观看记录。</li>');
         },
     },
-
     'Ulog':{
         'Init':function(){
             MAC.Ulog.Set();
             MAC.Ulog.Click();
 
         },
-        'Get':function(){
-            $.ajax({
-                url: maccms.path+'/index.php/user/ajax_ulog/?ac=list',
-                type:'GET',
-                cache: false,
-                dataType: 'json',
-                success: function($r){
-                    if($r.code == 1){
-                        $.each($r['list'],function(index,row){
-                            alert(row.ulog_id);
-                        });
-                    }else{
-
-                    }
-                }
-            });
+        'Get':function(mid,id,type,page,limit,call){
+            MAC.Ajax(maccms.path+'/index.php/user/ajax_ulog/?ac=list&mid='+mid+'&id='+id+'&type='+type+'&page='+page+'&limit='+limit,'get','json','',call);
         },
         'Set':function(){
             if($(".mac_ulog_set").attr('data-mid')){
@@ -536,28 +511,47 @@ var MAC={
         },
         'Click':function(){
             $('body').on('click', 'a.mac_ulog', function(e){
+
                 //是否需要验证登录
                 if(MAC.User.IsLogin == 0){
-                    alert('您还没有登录哦！');
+                    MAC.User.Login();
                     return;
                 }
 
                 var $that = $(this);
                 if($that.attr("data-id")){
-                    $.ajax({
-                        url: maccms.path+'/index.php/user/ajax_ulog/?ac=set&mid='+$that.attr("data-mid")+'&id='+$that.attr("data-id")+'&type='+$that.attr("data-type"),
-                        cache: false,
-                        dataType: 'json',
-                        success: function($r){
-                            alert('收藏成功');
-                            if($r.code == 1){
-                                $that.addClass('disabled');
-                            }else{
-                                $that.attr('title', $r.msg);
-                            }
+                    MAC.Ajax(maccms.path+'/index.php/user/ajax_ulog/?ac=set&mid='+$that.attr("data-mid")+'&id='+$that.attr("data-id")+'&type='+$that.attr("data-type"),'get','json','',function(r){
+                        MAC.Pop.Msg(100,20,r.msg,1000);
+                        if(r.code == 1){
+                            $that.addClass('disabled');
+                        }else{
+                            $that.attr('title', r.msg);
                         }
                     });
                 }
+            });
+        }
+    },
+    'Website':{
+        'Referer':function() {
+            if($('.mac_referer').length==0){
+                return;
+            }
+
+            var url = document.referrer
+                ,domain=''
+                ,host = window.location.host
+                ,reg = /^http(s)?:\/\/(.*?)\//i
+                ,mc = url.match(reg);
+
+            if(url=='' || url.indexOf(host)!=-1 || mc ==null){
+                return;
+            }
+            domain = mc[2];
+            MAC.Ajax(maccms.path + '/index.php/ajax/referer?domain='+encodeURIComponent(domain)+'&url='+encodeURIComponent(url)+'&type=update','get','json','',function(r){
+                if (r.code == 1) {
+                }
+                console.log(r);
             });
         }
     },
@@ -570,7 +564,22 @@ var MAC={
         'GroupName':'',
         'Portrait':'',
         'Init':function(){
+            if($('.mac_user').length >0){
+                $('body').on('click', '.mac_user', function(e){
+                    MAC.User.Login();
+                });
 
+                $('.mac_user').hover(function(e){
+                    $('.mac_user_box').show();
+                }, function(){
+                    $('.mac_user_box').hover(function(){
+                        MAC.User.BoxShow = 1;
+                    }, function(){
+                        MAC.User.BoxShow = 0;
+                        $('.mac_user_box').hide();
+                    });
+                });
+            }
 
             if(MAC.Cookie.Get('user_id') !=undefined && MAC.Cookie.Get('user_id')!=''){
                 var url = maccms.path + '/index.php/user';
@@ -581,21 +590,23 @@ var MAC={
                 MAC.User.Portrait = MAC.Cookie.Get('user_portrait');
                 MAC.User.IsLogin = 1;
 
-                if($('.mac_user').prop("outerHTML").substr(0,2)=='<a'){
-                    $('.mac_user').attr('href',url);
-                    $('.mac_user').text(MAC.User.UserName);
-                }
-                else{
-                    //$('.mac_user').html('<a class="mac_text" href="'+ url +'">'+ name +'</a>');
-                }
+                if($('.mac_user').length >0) {
+                    if ($('.mac_user').prop("outerHTML").substr(0, 2) == '<a') {
+                        $('.mac_user').attr('href', url);
+                        $('.mac_user').text(MAC.User.UserName);
+                    }
+                    else {
+                        //$('.mac_user').html('<a class="mac_text" href="'+ url +'">'+ name +'</a>');
+                    }
 
-                var html = '<div class="mac_drop_box mac_user_box" style="display: none;">';
-                html+='<ul class="logged"><li><a target="_blank" href="'+url+'">用户中心</a></li><li class="logout"><a class="logoutbt" href="javascript:;" onclick="MAC.User.Logout();" target="_self"><i class="user-logout"></i>退出</a></li></ul>'
+                    var html = '<div class="mac_drop_box mac_user_box" style="display: none;">';
+                    html += '<ul class="logged"><li><a target="_blank" href="' + url + '">用户中心</a></li><li class="logout"><a class="logoutbt" href="javascript:;" onclick="MAC.User.Logout();" target="_self"><i class="user-logout"></i>退出</a></li></ul>'
 
-                $('.mac_user').after(html);
-                var h = $('.mac_user').height();
-                var position = $('.mac_user').position();
-                $('.mac_user_box').css({'left':position.left,'top':(position.top+h)});
+                    $('.mac_user').after(html);
+                    var h = $('.mac_user').height();
+                    var position = $('.mac_user').position();
+                    $('.mac_user_box').css({'left': position.left, 'top': (position.top + h)});
+                }
 
             }
             else{
@@ -613,31 +624,25 @@ var MAC={
             if(MAC.Cookie.Get('user_id') !=undefined && MAC.Cookie.Get('user_id')!=''){
                 ac= 'ajax_info';
             }
-            MAC.Pop.Show(400,380,'用户登录',maccms.path+'/index.php/user/'+ac,function($r){
+            MAC.Pop.Show(400,380,'用户登录',maccms.path+'/index.php/user/'+ac,function(r){
+                $('body').off('click', '.login_form_submit');
                 $('body').on('click', '.login_form_submit', function(e){
-                    $.ajax({
-                        type: 'POST',
-                        url: maccms.path + '/index.php/user/login',
-                        data: $('.mac_login_form').serialize(),
-                        success:function($r){
-                            alert($r.msg);
-                            if($r.code == 1){
-                                location.reload();
-                            }
+                    $(this).unbind('click');
+
+                    MAC.Ajax(maccms.path + '/index.php/user/login','post','json',$('.mac_login_form').serialize(),function(r){
+                        alert(r.msg);
+                        if(r.code == 1){
+                            location.reload();
                         }
                     });
                 });
             });
         },
         'Logout':function(){
-            $.ajax({
-                type: 'post',
-                url: maccms.path + '/index.php/user/logout',
-                success:function($r){
-                    MAC.Pop.Msg(100,20,$r.msg,1000);
-                    if($r.code == 1){
-                        location.reload();
-                    }
+            MAC.Ajax(maccms.path + '/index.php/user/logout','post','json','',function(r){
+                MAC.Pop.Msg(100,20,r.msg,1000);
+                if(r.code == 1){
+                    location.reload();
                 }
             });
         },
@@ -649,21 +654,14 @@ var MAC={
         'BuyPopedom':function(o){
             var $that = $(o);
             if($that.attr("data-id")){
-                if (confirm('您确认购买此条数据播放权限吗？')) {
-                    $.ajax({
-                        url: maccms.path + '/index.php/user/ajax_buy_popedom.html?id=' + $that.attr("data-id") + '&sid=' + $that.attr("data-sid") + '&nid=' + $that.attr("data-nid") + '&type=' + $that.attr("data-type"),
-                        cache: false,
-                        dataType: 'json',
-                        success: function ($r) {
-                            $that.addClass('disabled');
-                            MAC.Pop.Msg(300, 50, $r.msg, 1000);
-                            if ($r.code == 1) {
-                                top.location.reload();
-                            }
-                        },
-                        complete: function () {
-                            $that.removeClass('disabled');
+                if (confirm('您确认购买此条数据访问权限吗？')) {
+                    MAC.Ajax(maccms.path + '/index.php/user/ajax_buy_popedom.html?id=' + $that.attr("data-id") + '&mid=' + $that.attr("data-mid") + '&sid=' + $that.attr("data-sid") + '&nid=' + $that.attr("data-nid") + '&type=' + $that.attr("data-type"),'get','json','',function(r){
+                        $that.addClass('disabled');
+                        MAC.Pop.Msg(300, 50, r.msg, 2000);
+                        if (r.code == 1) {
+                            top.location.reload();
                         }
+                        $that.removeClass('disabled');
                     });
                 }
             }
@@ -708,20 +706,30 @@ var MAC={
             $('.pop_content').html('');
             $('.pop_top').find('h2').html($title);
 
-            $.ajax({
-                type: 'post',
-                url: $url,
-                timeout: 3000,
-                error: function(){
-                    $(".pop_content").html('加载失败，请刷新...');
-                },
-                success:function($r){
-                    $(".pop_content").html($r);
-                    $callback($r);
-                }
+            MAC.Ajax($url,'post','json','',function(r){
+                $(".pop_content").html(r);
+                $callback(r);
+            },function(){
+                $(".pop_content").html('加载失败，请刷新...');
             });
 
             $('.mac_pop_bg,.mac_pop').show();
+        }
+    },
+    'Pwd':{
+        'Check':function(o){
+            var $that = $(o);
+            if($that.attr("data-id")){
+                    MAC.Ajax(maccms.path + '/index.php/ajax/pwd.html?id=' + $that.attr("data-id") + '&mid=' + $that.attr("data-mid") + '&type=' + $that.attr("data-type") + '&pwd='+ $that.parents('form').find('input[name="pwd"]').val() ,'get','json','',function(r){
+                        $that.addClass('disabled');
+                        MAC.Pop.Msg(300, 50, r.msg, 2000);
+                        if (r.code == 1) {
+                            location.reload();
+                        }
+                        $that.removeClass('disabled');
+                    });
+
+            }
         }
     },
     'AdsWrap':function(w,h,n){
@@ -739,7 +747,14 @@ var MAC={
         location.href= maccms.path + '/index.php/ajax/desktop?name='+encodeURI(s)+'&url=' + encodeURI(location.href);
     },
     'Timming':function(){
-
+        if($('.mac_timming').length==0){
+            return;
+        }
+        var infile = $('.mac_timming').attr("data-file");
+        if(infile==undefined || infile == ''){
+            infile = 'api.php';
+        }
+        var t=(new Image());t.src=maccms.path + '/'+infile+'/timming/index?t='+Math.random();
     },
     'Error':function(tab,id,name){
 
@@ -782,15 +797,10 @@ var MAC={
             $('body').on('click', '.comment_report', function(e){
                 var $that = $(this);
                 if($(this).attr("data-id")){
-                    $.ajax({
-                        url: maccms.path + '/index.php/comment/report.html?id='+$that.attr("data-id"),
-                        cache: false,
-                        dataType: 'json',
-                        success: function($r){
-                            $that.addClass('disabled');
-                            MAC.Pop.Msg(100,20,$r.msg,1000);
-                            if($r.code == 1){
-                            }
+                    MAC.Ajax(maccms.path + '/index.php/comment/report.html?id='+$that.attr("data-id"),'get','json','',function(r){
+                        $that.addClass('disabled');
+                        MAC.Pop.Msg(100,20,r.msg,1000);
+                        if(r.code == 1){
                         }
                     });
                 }
@@ -827,16 +837,10 @@ var MAC={
         },
         'Show':function($page){
             if($(".mac_comment").length>0){
-                $.ajax({
-                    type: 'get',
-                    url: maccms.path + '/index.php/comment/ajax.html?rid='+$('.mac_comment').attr('data-id')+'&mid='+ $('.mac_comment').attr('data-mid') +'&page='+$page,
-                    timeout: 5000,
-                    error: function(){
-                        $(".mac_comment").html('评论加载失败，请刷新...');
-                    },
-                    success:function($r){
-                        $(".mac_comment").html($r);
-                    }
+                MAC.Ajax(maccms.path + '/index.php/comment/ajax.html?rid='+$('.mac_comment').attr('data-id')+'&mid='+ $('.mac_comment').attr('data-mid') +'&page='+$page,'get','json','',function(r){
+                    $(".mac_comment").html(r);
+                },function(){
+                    $(".mac_comment").html('<a href="javascript:void(0)" onclick="MAC.Comment.Show('+$page+')">评论加载失败，点击我刷新...</a>');
                 });
             }
         },
@@ -857,20 +861,14 @@ var MAC={
                 MAC.Pop.Msg(100,20,'关联id错误！',1000);
                 return false;
             }
-
-            $.ajax({
-                type: 'post',
-                url: maccms.path + '/index.php/comment/saveData',
-                data: $(form).serialize() + '&comment_mid='+ $('.mac_comment').attr('data-mid') + '&comment_rid=' + $('.mac_comment').attr('data-id'),
-                success:function($r){
-                    MAC.Pop.Msg(100,20,$r.msg,1000);
-                    if($r.code == 1){
-                        MAC.Comment.Show(1);
-                    }
-                    else{
-                        if(MAC.Comment.Verify==1){
-                            MAC.Verify.Refresh();
-                        }
+            MAC.Ajax(maccms.path + '/index.php/comment/saveData','post','json',$(form).serialize() + '&comment_mid='+ $('.mac_comment').attr('data-mid') + '&comment_rid=' + $('.mac_comment').attr('data-id'),function(r){
+                MAC.Pop.Msg(100,20,r.msg,1000);
+                if(r.code == 1){
+                    MAC.Comment.Show(1);
+                }
+                else{
+                    if(MAC.Comment.Verify==1){
+                        MAC.Verify.Refresh();
                     }
                 }
             });
@@ -879,9 +877,8 @@ var MAC={
 }
 
 $(function(){
-    //定时任务初始化
-    //MAC.Timming();
-
+    //异步加载图片初始化
+    MAC.Image.Lazyload.Show();
     //自动跳转手机和pc网页地址
     MAC.Adaptive();
     //验证码初始化
@@ -890,8 +887,8 @@ $(function(){
     MAC.PageGo.Init();
     //用户部分初始化
     MAC.User.Init();
-
-
+    //二维码初始化
+    MAC.Qrcode.Init();
     //顶和踩初始化
     MAC.Digg.Init();
     //评分初始化
@@ -900,12 +897,14 @@ $(function(){
     MAC.Star.Init();
     //点击数量
     MAC.Hits.Init();
-
     //历史记录初始化
     MAC.History.Init();
     //用户访问记录初始化
     MAC.Ulog.Init();
-
     //联想搜索初始化
     MAC.Suggest.Init('.mac_wd',1,'');
+    //网址导航来路统计
+    MAC.Website.Referer();
+    //定时任务初始化
+    MAC.Timming();
 });
