@@ -176,6 +176,23 @@ var stui = {
                 }, 400);
                 return !1
             })
+        },
+        'sort': function() {
+            $(".sort-button").each(function(){
+                $(this).on("click",function(e){
+                    e.preventDefault();
+                    $(this).parent().parent().parent().find(".sort-list").each(function(){
+                        var playlist=$(this).find("li");
+                        for(let i=0,j=playlist.length-1;i<j;){
+                            var l=playlist.eq(i).clone(true);
+                            var r=playlist.eq(j).replaceWith(l);
+                            playlist.eq(i).replaceWith(r);
+                            ++i;
+                            --j;
+                        }
+                    });
+                });
+            });
         }
     }
 };
@@ -193,4 +210,5 @@ $(document).ready(function() {
     stui.common.history();
     stui.common.collapse();
     stui.common.scrolltop();
+    stui.common.sort();
 });
