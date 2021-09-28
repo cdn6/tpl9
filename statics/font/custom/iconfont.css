@@ -1,0 +1,19 @@
+@font-face {
+  font-family: "iconfont"; /* Project id 2842020 */
+  src: url('https://cdn.jsdelivr.net/gh/cdn6/tpl9/statics/font/custom/iconfont.woff2?t=1632844774764') format('woff2'),
+       url('https://cdn.jsdelivr.net/gh/cdn6/tpl9/statics/font/custom/iconfont.woff?t=1632844774764') format('woff'),
+       url('https://cdn.jsdelivr.net/gh/cdn6/tpl9/statics/font/custom/iconfont.ttf?t=1632844774764') format('truetype');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-sort:before {
+  content: "\e62e";
+}
+
