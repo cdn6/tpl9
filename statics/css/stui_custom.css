@@ -4,6 +4,7 @@
 /* header-menu */
 .stui-header__menu > li > a{ color: #fff;}
 .stui-header__menu > li.active > a,.stui-header__menu .dropdown li.active a{ background-color: #FF9900; color: #FFFFFF;}
+.stui-header__menu > li.active_pc > a{ color: #FF9900;}
 .stui-header__menu > li .dropdown{ background-color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.2);}
 .stui-header__menu > li .dropdown:before{ background-color: #fff;}
 .stui-header__menu .dropdown li a{ background-color: #f5f5f5;}
